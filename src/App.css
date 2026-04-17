@@ -12,6 +12,15 @@
   opacity: 0.85;
 }
 
+header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.download {
+  width: fit-content;
+}
+
 .panel {
   background: #18111f;
   border: 1px solid #3c2f4a;

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import './App.css'
 
 const CLANS = [
@@ -49,6 +51,7 @@ const initialSkills = Object.values(SKILLS).flat().reduce((acc, item) => {
 }, {})
 
 function App() {
+  const sheetRef = useRef(null)
   const [character, setCharacter] = useState({
     name: '',
     concept: '',
@@ -95,11 +98,45 @@ function App() {
     </select>
   )
 
+  const downloadPdf = async () => {
+    if (!sheetRef.current) return
+
+    const canvas = await html2canvas(sheetRef.current, {
+      scale: 2,
+      backgroundColor: '#0e0a14',
+      useCORS: true,
+    })
+    const imgData = canvas.toDataURL('image/png')
+    const pdf = new jsPDF('p', 'mm', 'a4')
+
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const imgHeight = (canvas.height * pageWidth) / canvas.width
+    let heightLeft = imgHeight
+    let position = 0
+
+    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
+    heightLeft -= pageHeight
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
+      heightLeft -= pageHeight
+    }
+
+    const safeName = character.name?.trim() ? character.name.trim() : 'v5-character'
+    pdf.save(`${safeName}.pdf`)
+  }
+
   return (
-    <main className="sheet">
+    <main className="sheet" ref={sheetRef}>
       <header>
         <h1>Vampire: The Masquerade V5 - Конструктор персонажа</h1>
         <p className="subtitle">Собери чарлист, отметь ключевые параметры и держи важное на одном экране.</p>
+        <button type="button" className="download" onClick={downloadPdf}>
+          Скачать PDF
+        </button>
       </header>
 
       <section className="panel grid2">
