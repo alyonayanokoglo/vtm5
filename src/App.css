@@ -227,6 +227,72 @@ button:hover {
   display: none;
 }
 
+.print-main-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8mm;
+  min-height: 285mm;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.print-blood-splatter {
+  position: absolute;
+  width: 62mm;
+  max-width: 36%;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+  filter: saturate(1.15) contrast(1.04);
+}
+
+.print-blood-splatter--top-left {
+  top: -12mm;
+  left: -14mm;
+  transform: rotate(18deg) scale(1.05);
+  opacity: 1;
+}
+
+.print-blood-splatter--top-right {
+  top: -10mm;
+  right: -10mm;
+  transform: scaleX(-1) rotate(4deg) scale(0.95);
+  opacity: 1;
+}
+
+.print-blood-splatter--middle-right {
+  top: 154mm;
+  left: -5mm;
+  width: 56mm;
+  max-width: 34%;
+  transform: rotate(45deg);
+  opacity: 1;
+}
+
+.print-blood-splatter--discipline-center {
+  top: 134mm;
+  left: 126mm;
+  width: 40mm;
+  max-width: 24%;
+  transform: rotate(45deg);
+  opacity: 1;
+}
+
+.print-blood-splatter--bottom-right {
+  right: -16mm;
+  bottom: -6mm;
+  width: 86mm;
+  max-width: 48%;
+  transform: rotate(-8deg);
+  opacity: 1;
+}
+
+.print-main-page > :not(.print-blood-splatter) {
+  position: relative;
+  z-index: 1;
+}
+
 .track {
   display: inline-flex;
   gap: 1mm;

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import bloodSplatter from './img/—Pngtree—realistic blood splatter stain_22930222.png'
 import './App.css'
 
 const CLANS = [
@@ -113,6 +114,21 @@ function App() {
     document.body.classList.add('pdf-export')
     let canvas
     try {
+      const images = Array.from(printSheetRef.current.querySelectorAll('img'))
+      await Promise.all(
+        images.map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete) {
+                resolve()
+                return
+              }
+              img.addEventListener('load', resolve, { once: true })
+              img.addEventListener('error', resolve, { once: true })
+            }),
+        ),
+      )
+
       canvas = await html2canvas(printSheetRef.current, {
         scale: 3,
         backgroundColor: '#ffffff',
@@ -145,12 +161,23 @@ function App() {
     pdf.rect(0, 0, pageWidth, pageHeight, 'F')
     pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST')
 
-    const safeName = character.name?.trim() ? character.name.trim() : 'v5-character'
-    pdf.save(`${safeName}.pdf`)
+    const characterName = character.name?.trim() || 'Без имени'
+    pdf.save(`${characterName} — лист персонажа.pdf`)
   }
 
   const printA4 = () => {
+    const originalTitle = document.title
+    const characterName = character.name?.trim() || 'Без имени'
+    document.title = `${characterName} — лист`
+
+    const restoreTitle = () => {
+      document.title = originalTitle
+      window.removeEventListener('afterprint', restoreTitle)
+    }
+
+    window.addEventListener('afterprint', restoreTitle)
     window.print()
+    setTimeout(restoreTitle, 1000)
   }
 
   const renderTrack = (filled, total = 5, mode = 'filled') => (
@@ -606,8 +633,14 @@ function App() {
       </div>
 
       <section className="print-sheet" ref={printSheetRef}>
-        <h2 className="print-title">Vampire: The Masquerade</h2>
-        <div className="print-top">
+        <section className="print-main-page">
+          <img className="print-blood-splatter print-blood-splatter--top-left" src={bloodSplatter} alt="" aria-hidden="true" />
+          <img className="print-blood-splatter print-blood-splatter--top-right" src={bloodSplatter} alt="" aria-hidden="true" />
+          <img className="print-blood-splatter print-blood-splatter--middle-right" src={bloodSplatter} alt="" aria-hidden="true" />
+          <img className="print-blood-splatter print-blood-splatter--discipline-center" src={bloodSplatter} alt="" aria-hidden="true" />
+          <img className="print-blood-splatter print-blood-splatter--bottom-right" src={bloodSplatter} alt="" aria-hidden="true" />
+          <h2 className="print-title">Vampire: The Masquerade</h2>
+          <div className="print-top">
           <div className="print-top-col">
             <div><strong>Имя:</strong> {character.name || '____________________'}</div>
             <div><strong>Концепт:</strong> {character.concept || '____________________'}</div>
@@ -626,8 +659,8 @@ function App() {
           </div>
         </div>
 
-        <h3>Атрибуты</h3>
-        <div className="print-grid3">
+          <h3>Атрибуты</h3>
+          <div className="print-grid3">
           {Object.entries(ATTRIBUTES).map(([group, list]) => (
             <div key={group} className="print-card">
               <h4>{group}</h4>
@@ -641,8 +674,8 @@ function App() {
           ))}
         </div>
 
-        <h3>Навыки</h3>
-        <div className="print-grid3">
+          <h3>Навыки</h3>
+          <div className="print-grid3">
           {Object.entries(SKILLS).map(([group, list]) => (
             <div key={group} className="print-card">
               <h4>{group}</h4>
@@ -656,8 +689,8 @@ function App() {
           ))}
         </div>
 
-        <h3>Дисциплины</h3>
-        <div className="print-grid2-full">
+          <h3>Дисциплины</h3>
+          <div className="print-grid2-full">
           <div className="print-card discipline-card">
             {printDisciplines.slice(0, 2).map((d, i) => (
               <div className="print-row discipline-row" key={`discipline-left-${i}`}>
@@ -686,8 +719,8 @@ function App() {
           </div>
         </div>
 
-        <h3>Достоинства и недостатки</h3>
-        <div className="print-grid2-full">
+          <h3>Достоинства и недостатки</h3>
+          <div className="print-grid2-full">
           <div className="print-card discipline-card">
             <h4>Достоинства</h4>
             {printMerits.map((item, i) => (
@@ -718,14 +751,15 @@ function App() {
           </div>
         </div>
 
-        <h3>Состояние</h3>
-        <div className="print-card">
-          <h4>Трекеры</h4>
-          <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
-          <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
-          <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
-          <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
-        </div>
+          <h3>Состояние</h3>
+          <div className="print-card">
+            <h4>Трекеры</h4>
+            <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
+            <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
+            <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
+            <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
+          </div>
+        </section>
 
         <section className="print-notes-page">
           <h3>Заметки персонажа</h3>
