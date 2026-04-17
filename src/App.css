@@ -1,0 +1,92 @@
+.sheet {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  opacity: 0.85;
+}
+
+.panel {
+  background: #18111f;
+  border: 1px solid #3c2f4a;
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+input,
+select,
+textarea,
+button {
+  background: #0f0c15;
+  color: #f2eafa;
+  border: 1px solid #4e3a63;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+.add:hover,
+button:hover {
+  border-color: #b285e0;
+}
+
+.row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.stats {
+  grid-template-columns: repeat(5, auto);
+  align-items: center;
+}
+
+.discipline {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr auto;
+}
+
+@media (max-width: 980px) {
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
