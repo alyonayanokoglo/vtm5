@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
 .sheet {
   width: min(1200px, 100%);
   margin: 0 auto;
@@ -5,6 +7,22 @@
   display: grid;
   gap: 1rem;
   box-sizing: border-box;
+  position: relative;
+}
+
+.sheet::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 50% at 50% -10%, rgba(141, 19, 31, 0.45), transparent 60%),
+    radial-gradient(60% 60% at 100% 10%, rgba(59, 8, 20, 0.35), transparent 70%),
+    radial-gradient(60% 60% at 0% 20%, rgba(38, 8, 31, 0.25), transparent 70%),
+    radial-gradient(16px 16px at 12% 8%, rgba(192, 27, 60, 0.2), transparent 70%),
+    radial-gradient(20px 20px at 82% 18%, rgba(214, 44, 78, 0.18), transparent 72%),
+    radial-gradient(14px 14px at 76% 84%, rgba(166, 19, 51, 0.16), transparent 70%);
+  z-index: -1;
 }
 
 .subtitle {
@@ -12,9 +30,38 @@
   opacity: 0.85;
 }
 
-header {
+.vamp-header {
   display: grid;
   gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #4c2232;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(46, 11, 22, 0.72), rgba(24, 9, 20, 0.75)),
+    radial-gradient(circle at 10% 0, rgba(125, 14, 30, 0.45), transparent 45%);
+  box-shadow:
+    inset 0 0 0 1px rgba(169, 51, 76, 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.vamp-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(12px 12px at 18% 14%, rgba(185, 24, 57, 0.35), transparent 72%),
+    radial-gradient(16px 16px at 72% 20%, rgba(131, 16, 43, 0.3), transparent 72%),
+    radial-gradient(10px 10px at 89% 10%, rgba(224, 45, 82, 0.28), transparent 72%);
+}
+
+.vamp-header h1 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 22px rgba(184, 29, 58, 0.35);
+  font-family: 'Cinzel', 'Times New Roman', serif;
 }
 
 .actions {
@@ -25,15 +72,26 @@ header {
 
 .download {
   width: fit-content;
+  background: linear-gradient(180deg, #28061c, #190313);
+  border: 1px solid #7d2f4e;
+  color: #f9e9ef;
+}
+
+.download:hover {
+  border-color: #db5a86;
+  box-shadow: 0 0 0 1px rgba(219, 90, 134, 0.25), 0 0 18px rgba(134, 19, 47, 0.45);
 }
 
 .panel {
-  background: #18111f;
-  border: 1px solid #3c2f4a;
+  background:
+    linear-gradient(180deg, rgba(27, 15, 30, 0.92), rgba(19, 10, 21, 0.95)),
+    radial-gradient(circle at 12% 8%, rgba(132, 24, 51, 0.2), transparent 45%);
+  border: 1px solid #4a3041;
   border-radius: 10px;
   padding: 1rem;
   display: grid;
   gap: 0.7rem;
+  box-shadow: inset 0 0 0 1px rgba(112, 46, 72, 0.18);
 }
 
 .grid2 {
@@ -59,9 +117,9 @@ input,
 select,
 textarea,
 button {
-  background: #0f0c15;
-  color: #f2eafa;
-  border: 1px solid #4e3a63;
+  background: linear-gradient(180deg, #140b1a, #0f0816);
+  color: #f5ebf0;
+  border: 1px solid #5a3a4f;
   border-radius: 8px;
   padding: 0.5rem 0.6rem;
   font-size: 0.95rem;
@@ -73,7 +131,91 @@ button {
 
 .add:hover,
 button:hover {
-  border-color: #b285e0;
+  border-color: #d3557f;
+}
+
+.blood-drips {
+  position: relative;
+  height: 14px;
+  width: 180px;
+}
+
+.blood-drips span {
+  position: absolute;
+  top: 0;
+  width: 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #c41d45, #771026);
+  box-shadow: 0 0 9px rgba(196, 29, 69, 0.45);
+}
+
+.blood-drips span:nth-child(1) {
+  left: 16px;
+  height: 14px;
+}
+
+.blood-drips span:nth-child(2) {
+  left: 54px;
+  height: 10px;
+}
+
+.blood-drips span:nth-child(3) {
+  left: 92px;
+  height: 18px;
+}
+
+.blood-drips span:nth-child(4) {
+  left: 124px;
+  height: 12px;
+}
+
+.blood-drips span:nth-child(5) {
+  left: 148px;
+  height: 16px;
+}
+
+.vamp-fangs {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.vamp-fangs span {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 18px solid #f8f1f4;
+  filter: drop-shadow(0 0 4px rgba(193, 31, 62, 0.25));
+}
+
+.bite-marks {
+  position: absolute;
+  right: 78px;
+  top: 10px;
+  width: 46px;
+  height: 18px;
+}
+
+.bite-marks span {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #e9587b, #781126 75%);
+  box-shadow: 0 0 8px rgba(218, 49, 84, 0.4);
+}
+
+.bite-marks span:first-child {
+  left: 0;
+  top: 5px;
+}
+
+.bite-marks span:last-child {
+  left: 14px;
+  top: 0;
 }
 
 .row {
@@ -98,19 +240,30 @@ button:hover {
 
 .track {
   display: inline-flex;
-  gap: 1.2mm;
+  gap: 1mm;
+  align-items: center;
 }
 
-.dot {
-  width: 3mm;
-  height: 3mm;
-  border: 1px solid #222;
-  border-radius: 50%;
-  display: inline-block;
+.dot-svg {
+  width: 3.1mm;
+  height: 3.1mm;
+  min-width: 3.1mm;
+  min-height: 3.1mm;
+  max-width: 3.1mm;
+  max-height: 3.1mm;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  display: block;
 }
 
-.dot.filled {
-  background: #111;
+.dot-ring {
+  fill: #fff;
+  stroke: #111;
+  stroke-width: 11;
+}
+
+.dot-core {
+  fill: #111;
 }
 
 @media (max-width: 980px) {
@@ -129,10 +282,15 @@ button:hover {
 
 @page {
   size: A4;
-  margin: 10mm;
+  margin: 6mm;
 }
 
 @media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   :root {
     background: #fff !important;
     color: #111 !important;
@@ -144,51 +302,58 @@ button:hover {
   }
 
   .sheet {
-    width: 190mm;
+    width: 198mm;
     margin: 0 auto;
     padding: 0;
     gap: 0;
   }
 
+  .vamp-header,
   .actions,
   .editor-only,
-  .subtitle {
+  .subtitle,
+  .blood-drips,
+  .vamp-fangs,
+  .bite-marks {
     display: none !important;
   }
 
   .print-sheet {
     display: grid;
-    gap: 3mm;
-    font-size: 10pt;
+    gap: 1.8mm;
+    font-size: 8.8pt;
+    line-height: 1.22;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
   }
 
   .print-top {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2mm 4mm;
-    border: 1px solid #222;
-    padding: 2.5mm;
-    border-radius: 2mm;
+    gap: 1mm 2.2mm;
+    border: 0.35mm solid #1a1a1a;
+    padding: 2mm;
+    border-radius: 1.2mm;
+    background: #fff;
   }
 
   .print-grid3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2.5mm;
+    gap: 1.7mm;
   }
 
   .print-bottom {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
-    gap: 2.5mm;
+    gap: 1.7mm;
   }
 
   .print-card {
     background: #fff !important;
-    border: 1px solid #222 !important;
-    border-radius: 2mm;
-    color: #111 !important;
-    padding: 2.5mm;
+    border: 0.35mm solid #1a1a1a !important;
+    border-radius: 1.2mm;
+    color: #101010 !important;
+    padding: 1.8mm;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -197,45 +362,155 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #ddd;
-    padding: 0.8mm 0;
+    border-bottom: 0.22mm solid #d3d3d3;
+    padding: 0.55mm 0;
   }
 
   .print-sheet h3,
   .print-sheet h4 {
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.3mm;
+    letter-spacing: 0.25mm;
+    color: #050505;
+    font-family: 'Cinzel', 'Times New Roman', serif;
+  }
+
+  .print-title {
+    margin: 0 0 0.8mm;
+    font-size: 12pt;
+    font-family: 'Cinzel', 'Times New Roman', serif;
+    text-transform: none;
+    letter-spacing: 0.1mm;
+    border-bottom: 0.35mm solid #1a1a1a;
+    padding-bottom: 0.8mm;
   }
 
   .print-sheet h3 {
-    font-size: 11pt;
-    margin-top: 1mm;
+    font-size: 9.1pt;
+    margin-top: 0.8mm;
+    border-bottom: 0.3mm solid #1a1a1a;
+    padding-bottom: 0.6mm;
   }
 
   .print-sheet h4 {
-    font-size: 9pt;
-    margin-bottom: 1mm;
+    font-size: 8pt;
+    margin-bottom: 0.7mm;
   }
 
   .print-row span:first-child {
-    max-width: 58%;
+    max-width: 62%;
   }
 
-  .dot {
-    width: 2.6mm;
-    height: 2.6mm;
-    border-color: #111;
+  .dot-svg {
+    width: 2.4mm;
+    height: 2.4mm;
+    min-width: 2.4mm;
+    min-height: 2.4mm;
+    max-width: 2.4mm;
+    max-height: 2.4mm;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
   }
+}
 
-  .dot.filled {
-    background: #111;
-  }
+body.pdf-export .print-sheet {
+  display: grid !important;
+  gap: 1.8mm;
+  font-size: 8.8pt;
+  line-height: 1.22;
+  width: 198mm;
+  min-height: 285mm;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  color: #101010;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
 
-  @media (max-width: 1000px) {
-    .print-grid3,
-    .print-bottom {
-      grid-template-columns: 1fr;
-    }
-  }
+body.pdf-export .vamp-header {
+  display: none !important;
+}
+
+body.pdf-export .print-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1mm 2.2mm;
+  border: 0.35mm solid #1a1a1a;
+  padding: 2mm;
+  border-radius: 1.2mm;
+  background: #fff;
+}
+
+body.pdf-export .print-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.7mm;
+}
+
+body.pdf-export .print-bottom {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.7mm;
+}
+
+body.pdf-export .print-card {
+  background: #fff;
+  border: 0.35mm solid #1a1a1a;
+  border-radius: 1.2mm;
+  color: #101010;
+  padding: 1.8mm;
+}
+
+body.pdf-export .print-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 0.22mm solid #d3d3d3;
+  padding: 0.55mm 0;
+}
+
+body.pdf-export .print-sheet h3,
+body.pdf-export .print-sheet h4 {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.25mm;
+  color: #050505;
+  font-family: 'Cinzel', 'Times New Roman', serif;
+}
+
+body.pdf-export .print-title {
+  margin: 0 0 0.8mm;
+  font-size: 12pt;
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  text-transform: none;
+  letter-spacing: 0.1mm;
+  border-bottom: 0.35mm solid #1a1a1a;
+  padding-bottom: 0.8mm;
+}
+
+body.pdf-export .print-sheet h3 {
+  font-size: 9.1pt;
+  margin-top: 0.8mm;
+  border-bottom: 0.3mm solid #1a1a1a;
+  padding-bottom: 0.6mm;
+}
+
+body.pdf-export .print-sheet h4 {
+  font-size: 8pt;
+  margin-bottom: 0.7mm;
+}
+
+body.pdf-export .print-row span:first-child {
+  max-width: 62%;
+}
+
+body.pdf-export .dot-svg {
+  width: 2.4mm;
+  height: 2.4mm;
+  min-width: 2.4mm;
+  min-height: 2.4mm;
+  max-width: 2.4mm;
+  max-height: 2.4mm;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
 }

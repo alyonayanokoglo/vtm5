@@ -52,6 +52,7 @@ const initialSkills = Object.values(SKILLS).flat().reduce((acc, item) => {
 
 function App() {
   const sheetRef = useRef(null)
+  const printSheetRef = useRef(null)
   const [character, setCharacter] = useState({
     name: '',
     concept: '',
@@ -101,31 +102,42 @@ function App() {
   )
 
   const downloadPdf = async () => {
-    if (!sheetRef.current) return
+    if (!printSheetRef.current) return
 
-    const canvas = await html2canvas(sheetRef.current, {
-      scale: 2,
-      backgroundColor: '#0e0a14',
-      useCORS: true,
-    })
+    document.body.classList.add('pdf-export')
+    let canvas
+    try {
+      canvas = await html2canvas(printSheetRef.current, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+      })
+    } finally {
+      document.body.classList.remove('pdf-export')
+    }
+
     const imgData = canvas.toDataURL('image/png')
     const pdf = new jsPDF('p', 'mm', 'a4')
-
     const pageWidth = pdf.internal.pageSize.getWidth()
     const pageHeight = pdf.internal.pageSize.getHeight()
-    const imgHeight = (canvas.height * pageWidth) / canvas.width
-    let heightLeft = imgHeight
-    let position = 0
+    const imageRatio = canvas.width / canvas.height
+    const pageRatio = pageWidth / pageHeight
 
-    pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
-    heightLeft -= pageHeight
+    let renderWidth = pageWidth
+    let renderHeight = pageHeight
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight)
-      heightLeft -= pageHeight
+    if (imageRatio > pageRatio) {
+      renderHeight = pageWidth / imageRatio
+    } else {
+      renderWidth = pageHeight * imageRatio
     }
+
+    const x = (pageWidth - renderWidth) / 2
+    const y = (pageHeight - renderHeight) / 2
+
+    pdf.setFillColor(255, 255, 255)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST')
 
     const safeName = character.name?.trim() ? character.name.trim() : 'v5-character'
     pdf.save(`${safeName}.pdf`)
@@ -138,20 +150,40 @@ function App() {
   const renderTrack = (filled, total = 5) => (
     <span className="track">
       {Array.from({ length: total }).map((_, i) => (
-        <span key={i} className={`dot ${i < filled ? 'filled' : ''}`} />
+        <svg
+          key={i}
+          className={`dot-svg ${i < filled ? 'filled' : ''}`}
+          viewBox="0 0 100 100"
+          aria-hidden="true"
+        >
+          <circle className="dot-ring" cx="50" cy="50" r="44" />
+          {i < filled ? <circle className="dot-core" cx="50" cy="50" r="34" /> : null}
+        </svg>
       ))}
     </span>
   )
 
   return (
     <main className="sheet" ref={sheetRef}>
-      <header>
+      <header className="vamp-header">
         <h1>Vampire: The Masquerade V5 - Конструктор персонажа</h1>
         <p className="subtitle">Собери чарлист, отметь ключевые параметры и держи важное на одном экране.</p>
+        <div className="blood-drips" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="vamp-fangs" aria-hidden="true">
+          <span />
+          <span />
+        </div>
+        <div className="bite-marks" aria-hidden="true">
+          <span />
+          <span />
+        </div>
         <div className="actions">
-          <button type="button" className="download" onClick={downloadPdf}>
-            Скачать PDF (скриншот)
-          </button>
           <button type="button" className="download printBtn" onClick={printA4}>
             Печать / PDF A4 (белый лист)
           </button>
@@ -302,7 +334,8 @@ function App() {
       </section>
       </div>
 
-      <section className="print-sheet">
+      <section className="print-sheet" ref={printSheetRef}>
+        <h2 className="print-title">Vampire: The Masquerade</h2>
         <div className="print-top">
           <div><strong>Имя:</strong> {character.name || '____________________'}</div>
           <div><strong>Концепт:</strong> {character.concept || '____________________'}</div>
