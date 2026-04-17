@@ -10,6 +10,14 @@
   position: relative;
 }
 
+.sheet,
+.panel,
+.discipline-item,
+.discipline-head,
+.row {
+  min-width: 0;
+}
+
 .sheet::before {
   content: '';
   position: fixed;
@@ -119,6 +127,13 @@ button {
   font-size: 0.95rem;
 }
 
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
 input[type='range'] {
   accent-color: #b3122f;
 }
@@ -133,8 +148,10 @@ button:hover {
 }
 
 .row {
+  display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .stats {
@@ -162,6 +179,33 @@ button:hover {
   grid-template-columns: 1fr auto auto;
   gap: 0.5rem;
   align-items: center;
+}
+
+.discipline-head input {
+  min-width: 0;
+}
+
+.discipline-item textarea {
+  min-height: 5.2rem;
+  resize: vertical;
+}
+
+.lined-textarea {
+  line-height: 1.3rem;
+  background:
+    linear-gradient(180deg, #1a0810, #13060c),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) 1.14rem,
+      rgba(214, 173, 188, 0.26) 1.14rem,
+      rgba(214, 173, 188, 0.26) 1.18rem
+    );
+  background-blend-mode: normal;
+}
+
+.discipline-item textarea::placeholder {
+  color: rgba(228, 205, 214, 0.72);
 }
 
 .discipline-delete {
@@ -222,6 +266,40 @@ button:hover {
 
   .stats {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .sheet {
+    padding: 0.75rem;
+  }
+
+  .vamp-header {
+    padding: 0.85rem;
+  }
+
+  .vamp-header h1 {
+    font-size: clamp(1.25rem, 6vw, 1.55rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .download {
+    width: 100%;
+  }
+
+  .discipline-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .discipline-delete {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
@@ -289,6 +367,17 @@ button:hover {
   .print-top-col {
     display: grid;
     gap: 0.45mm;
+  }
+
+  .print-top-col + .print-top-col {
+    border-left: 0.22mm solid #d7d7d7;
+    padding-left: 1.6mm;
+  }
+
+  .print-top-col > div {
+    padding: 0.45mm 0.2mm 0.5mm;
+    border-bottom: 0.2mm dotted #d3d3d3;
+    line-height: 1.28;
   }
 
   .print-grid3 {
@@ -433,6 +522,17 @@ body.pdf-export .print-top {
 body.pdf-export .print-top-col {
   display: grid;
   gap: 0.45mm;
+}
+
+body.pdf-export .print-top-col + .print-top-col {
+  border-left: 0.22mm solid #d7d7d7;
+  padding-left: 1.6mm;
+}
+
+body.pdf-export .print-top-col > div {
+  padding: 0.45mm 0.2mm 0.5mm;
+  border-bottom: 0.2mm dotted #d3d3d3;
+  line-height: 1.28;
 }
 
 body.pdf-export .print-grid3 {

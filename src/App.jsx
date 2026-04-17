@@ -77,6 +77,8 @@ function App() {
     { name: 'Дисциплина 1', dots: 1, description: '' },
     { name: 'Дисциплина 2', dots: 0, description: '' },
   ])
+  const [merits, setMerits] = useState([{ name: 'Достоинство 1', dots: 1, description: '' }])
+  const [flaws, setFlaws] = useState([{ name: 'Недостаток 1', dots: 1, description: '' }])
 
   const derived = useMemo(
     () => ({
@@ -151,17 +153,21 @@ function App() {
     window.print()
   }
 
-  const renderTrack = (filled, total = 5) => (
+  const renderTrack = (filled, total = 5, mode = 'filled') => (
     <span className="track">
       {Array.from({ length: total }).map((_, i) => (
         <svg
           key={i}
-          className={`dot-svg ${i < filled ? 'filled' : ''}`}
+          className={`dot-svg ${
+            mode === 'disabled-after-limit' ? (i >= filled ? 'filled' : '') : (i < filled ? 'filled' : '')
+          }`}
           viewBox="0 0 100 100"
           aria-hidden="true"
         >
           <circle className="dot-ring" cx="50" cy="50" r="44" />
-          {i < filled ? <circle className="dot-core" cx="50" cy="50" r="34" /> : null}
+          {(mode === 'disabled-after-limit' ? i >= filled : i < filled)
+            ? <circle className="dot-core" cx="50" cy="50" r="34" />
+            : null}
         </svg>
       ))}
     </span>
@@ -169,17 +175,33 @@ function App() {
 
   const printDisciplines = useMemo(() => {
     const rows = disciplines.slice(0, 4).map((item) => ({
-      name: item.name?.trim() || '________________',
+      name: item.name?.trim() || '',
       dots: item.dots ?? 0,
       description: item.description?.trim() || '',
     }))
 
     while (rows.length < 4) {
-      rows.push({ name: '________________', dots: 0, description: '' })
+      rows.push({ name: '', dots: 0, description: '' })
     }
 
     return rows
   }, [disciplines])
+
+  const printMerits = useMemo(() => {
+    return merits.map((item) => ({
+      name: item.name?.trim() || '',
+      dots: item.dots ?? 0,
+      description: item.description?.trim() || '',
+    }))
+  }, [merits])
+
+  const printFlaws = useMemo(() => {
+    return flaws.map((item) => ({
+      name: item.name?.trim() || '',
+      dots: item.dots ?? 0,
+      description: item.description?.trim() || '',
+    }))
+  }, [flaws])
 
   const saveCharacterJson = () => {
     const data = {
@@ -188,6 +210,8 @@ function App() {
       attributes,
       skills,
       disciplines,
+      merits,
+      flaws,
     }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -229,6 +253,28 @@ function App() {
               description: item?.description ?? '',
             }))
           : [],
+      )
+      setMerits(
+        Array.isArray(parsed.merits)
+          ? parsed.merits.map((item, i) => ({
+              name: item?.name ?? `Достоинство ${i + 1}`,
+              dots: Number.isFinite(item?.dots) ? item.dots : 0,
+              description: item?.description ?? '',
+            }))
+          : parsed.character?.merits
+            ? [{ name: 'Достоинство 1', dots: 0, description: parsed.character.merits }]
+            : [],
+      )
+      setFlaws(
+        Array.isArray(parsed.flaws)
+          ? parsed.flaws.map((item, i) => ({
+              name: item?.name ?? `Недостаток ${i + 1}`,
+              dots: Number.isFinite(item?.dots) ? item.dots : 0,
+              description: item?.description ?? '',
+            }))
+          : parsed.character?.flaws
+            ? [{ name: 'Недостаток 1', dots: 0, description: parsed.character.flaws }]
+            : [],
       )
     } catch (error) {
       window.alert(`Не удалось загрузить JSON: ${error.message}`)
@@ -398,6 +444,7 @@ function App() {
               </button>
             </div>
             <textarea
+              className="lined-textarea"
               rows={2}
               value={discipline.description || ''}
               placeholder="О чем дисциплина, как проявляется, ключевые эффекты..."
@@ -425,24 +472,126 @@ function App() {
       </section>
 
       <section className="panel grid2">
-        <label>
-          Достоинства
-          <textarea
-            rows={4}
-            value={character.merits}
-            onChange={(e) => updateCharacter('merits', e.target.value)}
-            placeholder="Ресурсы, союзники, влияние, убежище..."
-          />
-        </label>
-        <label>
-          Недостатки
-          <textarea
-            rows={4}
-            value={character.flaws}
-            onChange={(e) => updateCharacter('flaws', e.target.value)}
-            placeholder="Враги, уязвимости, обязательства, ограничения..."
-          />
-        </label>
+        <div className="panel">
+          <h2>Достоинства</h2>
+          {merits.map((merit, index) => (
+            <div className="discipline-item" key={`merit-${index}`}>
+              <div className="discipline-head">
+                <input
+                  value={merit.name}
+                  placeholder={`Достоинство ${index + 1}`}
+                  onChange={(e) =>
+                    setMerits((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)),
+                    )
+                  }
+                />
+                {renderDotInput(
+                  merit.dots,
+                  (dots) =>
+                    setMerits((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, dots } : item)),
+                    ),
+                  5,
+                  0,
+                )}
+                <button
+                  type="button"
+                  className="discipline-delete"
+                  onClick={() =>
+                    setMerits((prev) => prev.filter((_, i) => i !== index))
+                  }
+                >
+                  Удалить
+                </button>
+              </div>
+              <textarea
+                className="lined-textarea"
+                rows={2}
+                value={merit.description || ''}
+                placeholder="Что даёт достоинство, в чём проявляется..."
+                onChange={(e) =>
+                  setMerits((prev) =>
+                    prev.map((item, i) =>
+                      i === index ? { ...item, description: e.target.value } : item,
+                    ),
+                  )
+                }
+              />
+            </div>
+          ))}
+          <button
+            className="add"
+            onClick={() =>
+              setMerits((prev) => [
+                ...prev,
+                { name: `Достоинство ${prev.length + 1}`, dots: 0, description: '' },
+              ])
+            }
+          >
+            Добавить достоинство
+          </button>
+        </div>
+        <div className="panel">
+          <h2>Недостатки</h2>
+          {flaws.map((flaw, index) => (
+            <div className="discipline-item" key={`flaw-${index}`}>
+              <div className="discipline-head">
+                <input
+                  value={flaw.name}
+                  placeholder={`Недостаток ${index + 1}`}
+                  onChange={(e) =>
+                    setFlaws((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)),
+                    )
+                  }
+                />
+                {renderDotInput(
+                  flaw.dots,
+                  (dots) =>
+                    setFlaws((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, dots } : item)),
+                    ),
+                  5,
+                  0,
+                )}
+                <button
+                  type="button"
+                  className="discipline-delete"
+                  onClick={() =>
+                    setFlaws((prev) => prev.filter((_, i) => i !== index))
+                  }
+                >
+                  Удалить
+                </button>
+              </div>
+              <textarea
+                className="lined-textarea"
+                rows={2}
+                value={flaw.description || ''}
+                placeholder="В чём недостаток, как мешает персонажу..."
+                onChange={(e) =>
+                  setFlaws((prev) =>
+                    prev.map((item, i) =>
+                      i === index ? { ...item, description: e.target.value } : item,
+                    ),
+                  )
+                }
+              />
+            </div>
+          ))}
+          <button
+            className="add"
+            onClick={() =>
+              setFlaws((prev) => [
+                ...prev,
+                { name: `Недостаток ${prev.length + 1}`, dots: 0, description: '' },
+              ])
+            }
+          >
+            Добавить недостаток
+          </button>
+        </div>
       </section>
 
       <section className="panel">
@@ -517,7 +666,7 @@ function App() {
                   {renderTrack(d.dots, 5)}
                 </div>
                 <div className="print-row-note">
-                  {d.description || '________________'}
+                  {d.description || ''}
                 </div>
               </div>
             ))}
@@ -530,7 +679,7 @@ function App() {
                   {renderTrack(d.dots, 5)}
                 </div>
                 <div className="print-row-note">
-                  {d.description || '________________'}
+                  {d.description || ''}
                 </div>
               </div>
             ))}
@@ -539,21 +688,41 @@ function App() {
 
         <h3>Достоинства и недостатки</h3>
         <div className="print-grid2-full">
-          <div className="print-card">
+          <div className="print-card discipline-card">
             <h4>Достоинства</h4>
-            <div className="print-lined-block">{character.merits?.trim() ? character.merits : ''}</div>
+            {printMerits.map((item, i) => (
+              <div className="print-row discipline-row" key={`print-merit-${i}`}>
+                <div className="print-row-main">
+                  <span>{item.name}</span>
+                  {renderTrack(item.dots, 5)}
+                </div>
+                <div className="print-row-note">
+                  {item.description || ''}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="print-card">
+          <div className="print-card discipline-card">
             <h4>Недостатки</h4>
-            <div className="print-lined-block">{character.flaws?.trim() ? character.flaws : ''}</div>
+            {printFlaws.map((item, i) => (
+              <div className="print-row discipline-row" key={`print-flaw-${i}`}>
+                <div className="print-row-main">
+                  <span>{item.name}</span>
+                  {renderTrack(item.dots, 5)}
+                </div>
+                <div className="print-row-note">
+                  {item.description || ''}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <h3>Состояние</h3>
         <div className="print-card">
           <h4>Трекеры</h4>
-          <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10)}</div>
-          <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10)}</div>
+          <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
+          <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
           <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
           <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
         </div>
