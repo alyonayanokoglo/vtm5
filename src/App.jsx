@@ -129,14 +129,23 @@ function App() {
     pdf.save(`${safeName}.pdf`)
   }
 
+  const printA4 = () => {
+    window.print()
+  }
+
   return (
     <main className="sheet" ref={sheetRef}>
       <header>
         <h1>Vampire: The Masquerade V5 - Конструктор персонажа</h1>
         <p className="subtitle">Собери чарлист, отметь ключевые параметры и держи важное на одном экране.</p>
-        <button type="button" className="download" onClick={downloadPdf}>
-          Скачать PDF
-        </button>
+        <div className="actions">
+          <button type="button" className="download" onClick={downloadPdf}>
+            Скачать PDF (скриншот)
+          </button>
+          <button type="button" className="download printBtn" onClick={printA4}>
+            Печать / PDF A4 (белый лист)
+          </button>
+        </div>
       </header>
 
       <section className="panel grid2">

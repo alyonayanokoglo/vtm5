@@ -17,6 +17,12 @@ header {
   gap: 0.5rem;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .download {
   width: fit-content;
 }
@@ -97,5 +103,63 @@ button:hover {
 
   .stats {
     grid-template-columns: 1fr;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  :root {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .sheet {
+    width: 190mm;
+    margin: 0 auto;
+    padding: 0;
+    gap: 4mm;
+  }
+
+  .actions {
+    display: none !important;
+  }
+
+  .panel {
+    background: #fff !important;
+    border: 1px solid #222 !important;
+    border-radius: 3mm;
+    color: #111 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    background: #fff !important;
+    color: #111 !important;
+    border: 1px solid #333 !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  h1,
+  h2,
+  .subtitle,
+  label,
+  span,
+  div,
+  p {
+    color: #111 !important;
   }
 }
