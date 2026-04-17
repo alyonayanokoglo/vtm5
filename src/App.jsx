@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import bloodSplatter from './img/—Pngtree—realistic blood splatter stain_22930222.png'
+import { getPredatorReference, PREDATOR_REFERENCE_NOTE } from './predatorBonuses.js'
 import './App.css'
 
 const CLANS = [
@@ -52,6 +53,62 @@ const initialSkills = Object.values(SKILLS).flat().reduce((acc, item) => {
   return acc
 }, {})
 
+/** Печать: не показывать пустые слоты с дефолтным именем «Дисциплина N» без текста и без точек. */
+function isDisciplineFilledForPrint(item) {
+  const name = item?.name?.trim() ?? ''
+  const descRaw = item?.description?.replace(/\r\n/g, '\n') ?? ''
+  const descTrimmed = descRaw.trim()
+  const dots = Number(item?.dots) || 0
+  if (dots > 0) return true
+  if (descTrimmed.length > 0) return true
+  if (!name) return false
+  if (/^Дисциплина\s*\d+$/i.test(name)) return false
+  return true
+}
+
+/** Высота печатной области ≈ A4 с полями @page 6mm (как .print-main-page min-height). */
+function measurePrintablePageHeightPx() {
+  const el = document.createElement('div')
+  el.setAttribute('aria-hidden', 'true')
+  el.style.cssText =
+    'position:fixed;left:0;top:0;height:285mm;width:0;overflow:hidden;visibility:hidden;pointer-events:none;z-index:-9999;margin:0;padding:0;border:0'
+  document.body.appendChild(el)
+  const h = el.getBoundingClientRect().height
+  el.remove()
+  return h > 0 ? h : (285 * 96) / 25.4
+}
+
+/** Если 3–4 дисциплины не помещаются под 1–2 на первой странице — ставим класс с разрывом перед 3-й. */
+function syncDisciplineRow2PageBreak(sheet) {
+  const grid = sheet?.querySelector('.print-disciplines-by-row')
+  if (!sheet || !grid) return
+  grid.classList.remove('print-disciplines-force-row2-page')
+  if (grid.children.length < 3) return
+
+  const pagePx = measurePrintablePageHeightPx()
+  const sheetTop = sheet.getBoundingClientRect().top
+  const card2 = grid.children[1]
+  const c3 = grid.children[2]
+  const c4 = grid.children[3]
+  if (!card2 || !c3) return
+
+  const row1Bottom = card2.getBoundingClientRect().bottom - sheetTop
+  const row2H = Math.max(c3.getBoundingClientRect().height, c4 ? c4.getBoundingClientRect().height : 0)
+  let rowGap = 12
+  try {
+    const raw = getComputedStyle(grid).rowGap || getComputedStyle(grid).gap || '0'
+    const parsed = parseFloat(raw)
+    if (!Number.isNaN(parsed)) rowGap = parsed
+  } catch {
+    /* ignore */
+  }
+  const buffer = 14
+  const remaining = pagePx - row1Bottom
+  if (remaining < row2H + rowGap + buffer) {
+    grid.classList.add('print-disciplines-force-row2-page')
+  }
+}
+
 function App() {
   const sheetRef = useRef(null)
   const printSheetRef = useRef(null)
@@ -91,6 +148,11 @@ function App() {
     [attributes, skills],
   )
 
+  const predatorReference = useMemo(
+    () => getPredatorReference(character.predatorType),
+    [character.predatorType],
+  )
+
   const updateCharacter = (field, value) => {
     setCharacter((prev) => ({ ...prev, [field]: value }))
   }
@@ -112,6 +174,8 @@ function App() {
     if (!printSheetRef.current) return
 
     document.body.classList.add('pdf-export')
+    void printSheetRef.current?.offsetHeight
+    syncDisciplineRow2PageBreak(printSheetRef.current)
     let canvas
     try {
       const images = Array.from(printSheetRef.current.querySelectorAll('img'))
@@ -135,6 +199,7 @@ function App() {
         useCORS: true,
       })
     } finally {
+      printSheetRef.current?.querySelector('.print-disciplines-by-row')?.classList.remove('print-disciplines-force-row2-page')
       document.body.classList.remove('pdf-export')
     }
 
@@ -201,24 +266,22 @@ function App() {
   )
 
   const printDisciplines = useMemo(() => {
-    const rows = disciplines.slice(0, 4).map((item) => ({
-      name: item.name?.trim() || '',
-      dots: item.dots ?? 0,
-      description: item.description?.trim() || '',
-    }))
-
-    while (rows.length < 4) {
-      rows.push({ name: '', dots: 0, description: '' })
-    }
-
-    return rows
+    return disciplines
+      .filter(isDisciplineFilledForPrint)
+      .slice(0, 4)
+      .map((item) => ({
+        name: item.name?.trim() || '',
+        dots: item.dots ?? 0,
+        // do not trim description body: preserve intentional blank lines inside text
+        description: item.description?.replace(/\r\n/g, '\n') ?? '',
+      }))
   }, [disciplines])
 
   const printMerits = useMemo(() => {
     return merits.map((item) => ({
       name: item.name?.trim() || '',
       dots: item.dots ?? 0,
-      description: item.description?.trim() || '',
+      description: item.description?.replace(/\r\n/g, '\n') ?? '',
     }))
   }, [merits])
 
@@ -226,9 +289,25 @@ function App() {
     return flaws.map((item) => ({
       name: item.name?.trim() || '',
       dots: item.dots ?? 0,
-      description: item.description?.trim() || '',
+      description: item.description?.replace(/\r\n/g, '\n') ?? '',
     }))
   }, [flaws])
+
+  useEffect(() => {
+    const onBefore = () => {
+      syncDisciplineRow2PageBreak(printSheetRef.current)
+      requestAnimationFrame(() => syncDisciplineRow2PageBreak(printSheetRef.current))
+    }
+    const onAfter = () => {
+      printSheetRef.current?.querySelector('.print-disciplines-by-row')?.classList.remove('print-disciplines-force-row2-page')
+    }
+    window.addEventListener('beforeprint', onBefore)
+    window.addEventListener('afterprint', onAfter)
+    return () => {
+      window.removeEventListener('beforeprint', onBefore)
+      window.removeEventListener('afterprint', onAfter)
+    }
+  }, [])
 
   const saveCharacterJson = () => {
     const data = {
@@ -369,14 +448,35 @@ function App() {
             ))}
           </select>
         </label>
-        <label>
-          Стиль охоты
-          <select value={character.predatorType} onChange={(e) => updateCharacter('predatorType', e.target.value)}>
-            {PREDATOR_TYPES.map((type) => (
-              <option key={type}>{type}</option>
-            ))}
-          </select>
-        </label>
+        <div className="predator-type-block">
+          <label>
+            Стиль охоты
+            <select value={character.predatorType} onChange={(e) => updateCharacter('predatorType', e.target.value)}>
+              {PREDATOR_TYPES.map((type) => (
+                <option key={type}>{type}</option>
+              ))}
+            </select>
+          </label>
+          {predatorReference ? (
+            <aside className="predator-reference" aria-label="Справка по стилю охоты V5">
+              <div className="predator-reference-title">Что даёт стиль (создание персонажа, V5)</div>
+              <p className="predator-reference-feed">{predatorReference.feeding}</p>
+              <ul className="predator-reference-list">
+                {predatorReference.bullets.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+              {predatorReference.notes?.length ? (
+                <ul className="predator-reference-notes">
+                  {predatorReference.notes.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="predator-reference-foot">{PREDATOR_REFERENCE_NOTE}</p>
+            </aside>
+          ) : null}
+        </div>
         <label>
           Поколение
           <input value={character.generation} onChange={(e) => updateCharacter('generation', e.target.value)} />
@@ -639,133 +739,134 @@ function App() {
           <img className="print-blood-splatter print-blood-splatter--middle-right" src={bloodSplatter} alt="" aria-hidden="true" />
           <img className="print-blood-splatter print-blood-splatter--discipline-center" src={bloodSplatter} alt="" aria-hidden="true" />
           <img className="print-blood-splatter print-blood-splatter--bottom-right" src={bloodSplatter} alt="" aria-hidden="true" />
-          <h2 className="print-title">Vampire: The Masquerade</h2>
-          <div className="print-top">
-          <div className="print-top-col">
-            <div><strong>Имя:</strong> {character.name || '____________________'}</div>
-            <div><strong>Концепт:</strong> {character.concept || '____________________'}</div>
-            <div><strong>Хроника:</strong> {character.chronicle || '____________________'}</div>
+          <div className="print-block">
+            <h2 className="print-title">Vampire: The Masquerade</h2>
+            <div className="print-top">
+              <div className="print-top-col">
+                <div><strong>Имя:</strong> {character.name || '____________________'}</div>
+                <div><strong>Концепт:</strong> {character.concept || '____________________'}</div>
+                <div><strong>Хроника:</strong> {character.chronicle || '____________________'}</div>
+              </div>
+              <div className="print-top-col">
+                <div><strong>Амбиция:</strong> {character.ambition || '____________________'}</div>
+                <div><strong>Желание:</strong> {character.desire || '____________________'}</div>
+                <div><strong>Стиль охоты:</strong> {character.predatorType}</div>
+              </div>
+              <div className="print-top-col">
+                <div><strong>Клан:</strong> {character.clan}</div>
+                <div><strong>Поколение:</strong> {character.generation}</div>
+                <div><strong>Сир:</strong> {character.sire || '____________________'}</div>
+                <div><strong>Сила крови:</strong> {character.bloodPotency}</div>
+              </div>
+            </div>
           </div>
-          <div className="print-top-col">
-            <div><strong>Амбиция:</strong> {character.ambition || '____________________'}</div>
-            <div><strong>Желание:</strong> {character.desire || '____________________'}</div>
-            <div><strong>Стиль охоты:</strong> {character.predatorType}</div>
-          </div>
-          <div className="print-top-col">
-            <div><strong>Клан:</strong> {character.clan}</div>
-            <div><strong>Поколение:</strong> {character.generation}</div>
-            <div><strong>Сир:</strong> {character.sire || '____________________'}</div>
-            <div><strong>Сила крови:</strong> {character.bloodPotency}</div>
-          </div>
-        </div>
 
-          <h3>Атрибуты</h3>
-          <div className="print-grid3">
-          {Object.entries(ATTRIBUTES).map(([group, list]) => (
-            <div key={group} className="print-card">
-              <h4>{group}</h4>
-              {list.map((item) => (
-                <div key={item} className="print-row">
-                  <span>{item}</span>
-                  {renderTrack(attributes[item], 5)}
+          <div className="print-block">
+            <h3>Атрибуты</h3>
+            <div className="print-grid3">
+              {Object.entries(ATTRIBUTES).map(([group, list]) => (
+                <div key={group} className="print-card">
+                  <h4>{group}</h4>
+                  {list.map((item) => (
+                    <div key={item} className="print-row">
+                      <span>{item}</span>
+                      {renderTrack(attributes[item], 5)}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-          <h3>Навыки</h3>
-          <div className="print-grid3">
-          {Object.entries(SKILLS).map(([group, list]) => (
-            <div key={group} className="print-card">
-              <h4>{group}</h4>
-              {list.map((item) => (
-                <div key={item} className="print-row">
-                  <span>{item}</span>
-                  {renderTrack(skills[item], 5)}
+          <div className="print-block">
+            <h3>Навыки</h3>
+            <div className="print-grid3">
+              {Object.entries(SKILLS).map(([group, list]) => (
+                <div key={group} className="print-card">
+                  <h4>{group}</h4>
+                  {list.map((item) => (
+                    <div key={item} className="print-row">
+                      <span>{item}</span>
+                      {renderTrack(skills[item], 5)}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-          <h3>Дисциплины</h3>
-          <div className="print-grid2-full">
-          <div className="print-card discipline-card">
-            {printDisciplines.slice(0, 2).map((d, i) => (
-              <div className="print-row discipline-row" key={`discipline-left-${i}`}>
-                <div className="print-row-main">
-                  <span>{d.name}</span>
-                  {renderTrack(d.dots, 5)}
+          <div className="print-block">
+            <h3>Дисциплины</h3>
+            <div className="print-grid2-full print-disciplines-by-row">
+              {printDisciplines.map((d, i) => (
+                <div className="print-card discipline-card" key={`discipline-cell-${i}`}>
+                  <div className="print-row discipline-row">
+                    <div className="print-row-main">
+                      <span>{d.name}</span>
+                      {renderTrack(d.dots, 5)}
+                    </div>
+                    <div className="print-row-note">
+                      {d.description || ''}
+                    </div>
+                  </div>
                 </div>
-                <div className="print-row-note">
-                  {d.description || ''}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-          <div className="print-card discipline-card">
-            {printDisciplines.slice(2, 4).map((d, i) => (
-              <div className="print-row discipline-row" key={`discipline-right-${i}`}>
-                <div className="print-row-main">
-                  <span>{d.name}</span>
-                  {renderTrack(d.dots, 5)}
-                </div>
-                <div className="print-row-note">
-                  {d.description || ''}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-          <h3>Достоинства и недостатки</h3>
-          <div className="print-grid2-full">
-          <div className="print-card discipline-card">
-            <h4>Достоинства</h4>
-            {printMerits.map((item, i) => (
-              <div className="print-row discipline-row" key={`print-merit-${i}`}>
-                <div className="print-row-main">
-                  <span>{item.name}</span>
-                  {renderTrack(item.dots, 5)}
-                </div>
-                <div className="print-row-note">
-                  {item.description || ''}
-                </div>
+          <div className="print-block">
+            <h3>Достоинства и недостатки</h3>
+            <div className="print-grid2-full">
+              <div className="print-card discipline-card print-merit-flaw-card">
+                <h4>Достоинства</h4>
+                {printMerits.map((item, i) => (
+                  <div className="print-row discipline-row" key={`print-merit-${i}`}>
+                    <div className="print-row-main">
+                      <span>{item.name}</span>
+                      {renderTrack(item.dots, 5)}
+                    </div>
+                    <div className="print-row-note">
+                      {item.description || ''}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="print-card discipline-card">
-            <h4>Недостатки</h4>
-            {printFlaws.map((item, i) => (
-              <div className="print-row discipline-row" key={`print-flaw-${i}`}>
-                <div className="print-row-main">
-                  <span>{item.name}</span>
-                  {renderTrack(item.dots, 5)}
-                </div>
-                <div className="print-row-note">
-                  {item.description || ''}
-                </div>
+              <div className="print-card discipline-card print-merit-flaw-card">
+                <h4>Недостатки</h4>
+                {printFlaws.map((item, i) => (
+                  <div className="print-row discipline-row" key={`print-flaw-${i}`}>
+                    <div className="print-row-main">
+                      <span>{item.name}</span>
+                      {renderTrack(item.dots, 5)}
+                    </div>
+                    <div className="print-row-note">
+                      {item.description || ''}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-          <h3>Состояние</h3>
-          <div className="print-card">
-            <h4>Трекеры</h4>
-            <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
-            <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
-            <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
-            <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
+          <div className="print-block">
+            <h3>Состояние</h3>
+            <div className="print-card">
+              <h4>Трекеры</h4>
+              <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
+              <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
+              <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
+              <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
+            </div>
           </div>
         </section>
 
         <section className="print-notes-page">
-          <h3>Заметки персонажа</h3>
-          <div className="print-card print-notes-card">
-            <div className="print-notes">
-              {character.notes?.trim() ? character.notes : ''}
+          <div className="print-notes-stack">
+            <h3>Заметки персонажа</h3>
+            <div className="print-card print-notes-card">
+              <div className="print-notes">
+                {character.notes?.trim() ? character.notes : ''}
+              </div>
             </div>
           </div>
         </section>
