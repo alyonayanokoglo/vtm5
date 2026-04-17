@@ -92,6 +92,27 @@ button:hover {
   grid-template-columns: 1fr auto;
 }
 
+.print-sheet {
+  display: none;
+}
+
+.track {
+  display: inline-flex;
+  gap: 1.2mm;
+}
+
+.dot {
+  width: 3mm;
+  height: 3mm;
+  border: 1px solid #222;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.filled {
+  background: #111;
+}
+
 @media (max-width: 980px) {
   .grid3 {
     grid-template-columns: 1fr;
@@ -126,40 +147,95 @@ button:hover {
     width: 190mm;
     margin: 0 auto;
     padding: 0;
-    gap: 4mm;
+    gap: 0;
   }
 
-  .actions {
+  .actions,
+  .editor-only,
+  .subtitle {
     display: none !important;
   }
 
-  .panel {
+  .print-sheet {
+    display: grid;
+    gap: 3mm;
+    font-size: 10pt;
+  }
+
+  .print-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2mm 4mm;
+    border: 1px solid #222;
+    padding: 2.5mm;
+    border-radius: 2mm;
+  }
+
+  .print-grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5mm;
+  }
+
+  .print-bottom {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2.5mm;
+  }
+
+  .print-card {
     background: #fff !important;
     border: 1px solid #222 !important;
-    border-radius: 3mm;
+    border-radius: 2mm;
     color: #111 !important;
+    padding: 2.5mm;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  input,
-  select,
-  textarea,
-  button {
-    background: #fff !important;
-    color: #111 !important;
-    border: 1px solid #333 !important;
-    -webkit-appearance: none;
-    appearance: none;
+  .print-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding: 0.8mm 0;
   }
 
-  h1,
-  h2,
-  .subtitle,
-  label,
-  span,
-  div,
-  p {
-    color: #111 !important;
+  .print-sheet h3,
+  .print-sheet h4 {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3mm;
+  }
+
+  .print-sheet h3 {
+    font-size: 11pt;
+    margin-top: 1mm;
+  }
+
+  .print-sheet h4 {
+    font-size: 9pt;
+    margin-bottom: 1mm;
+  }
+
+  .print-row span:first-child {
+    max-width: 58%;
+  }
+
+  .dot {
+    width: 2.6mm;
+    height: 2.6mm;
+    border-color: #111;
+  }
+
+  .dot.filled {
+    background: #111;
+  }
+
+  @media (max-width: 1000px) {
+    .print-grid3,
+    .print-bottom {
+      grid-template-columns: 1fr;
+    }
   }
 }

@@ -57,6 +57,8 @@ function App() {
     concept: '',
     sire: '',
     chronicle: '',
+    ambition: '',
+    desire: '',
     clan: CLANS[0],
     predatorType: PREDATOR_TYPES[0],
     generation: '13',
@@ -133,6 +135,14 @@ function App() {
     window.print()
   }
 
+  const renderTrack = (filled, total = 5) => (
+    <span className="track">
+      {Array.from({ length: total }).map((_, i) => (
+        <span key={i} className={`dot ${i < filled ? 'filled' : ''}`} />
+      ))}
+    </span>
+  )
+
   return (
     <main className="sheet" ref={sheetRef}>
       <header>
@@ -148,6 +158,7 @@ function App() {
         </div>
       </header>
 
+      <div className="editor-only">
       <section className="panel grid2">
         <label>
           Имя персонажа
@@ -164,6 +175,14 @@ function App() {
         <label>
           Хроника
           <input value={character.chronicle} onChange={(e) => updateCharacter('chronicle', e.target.value)} />
+        </label>
+        <label>
+          Амбиция
+          <input value={character.ambition} onChange={(e) => updateCharacter('ambition', e.target.value)} />
+        </label>
+        <label>
+          Желание
+          <input value={character.desire} onChange={(e) => updateCharacter('desire', e.target.value)} />
         </label>
         <label>
           Клан
@@ -280,6 +299,71 @@ function App() {
           onChange={(e) => updateCharacter('notes', e.target.value)}
           placeholder="Бэкграунд, амбиции, связи, цели, слабости..."
         />
+      </section>
+      </div>
+
+      <section className="print-sheet">
+        <div className="print-top">
+          <div><strong>Имя:</strong> {character.name || '____________________'}</div>
+          <div><strong>Концепт:</strong> {character.concept || '____________________'}</div>
+          <div><strong>Хроника:</strong> {character.chronicle || '____________________'}</div>
+          <div><strong>Амбиция:</strong> {character.ambition || '____________________'}</div>
+          <div><strong>Желание:</strong> {character.desire || '____________________'}</div>
+          <div><strong>Стиль охоты:</strong> {character.predatorType}</div>
+          <div><strong>Клан:</strong> {character.clan}</div>
+          <div><strong>Поколение:</strong> {character.generation}</div>
+          <div><strong>Сир:</strong> {character.sire || '____________________'}</div>
+          <div><strong>Сила крови:</strong> {character.bloodPotency}</div>
+        </div>
+
+        <h3>Атрибуты</h3>
+        <div className="print-grid3">
+          {Object.entries(ATTRIBUTES).map(([group, list]) => (
+            <div key={group} className="print-card">
+              <h4>{group}</h4>
+              {list.map((item) => (
+                <div key={item} className="print-row">
+                  <span>{item}</span>
+                  {renderTrack(attributes[item], 5)}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <h3>Навыки</h3>
+        <div className="print-grid3">
+          {Object.entries(SKILLS).map(([group, list]) => (
+            <div key={group} className="print-card">
+              <h4>{group}</h4>
+              {list.map((item) => (
+                <div key={item} className="print-row">
+                  <span>{item}</span>
+                  {renderTrack(skills[item], 5)}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="print-bottom">
+          <div className="print-card">
+            <h4>Дисциплины</h4>
+            {disciplines.map((d, i) => (
+              <div className="print-row" key={i}>
+                <span>{d.name}</span>
+                {renderTrack(d.dots, 5)}
+              </div>
+            ))}
+          </div>
+          <div className="print-card">
+            <h4>Состояние</h4>
+            <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10)}</div>
+            <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10)}</div>
+            <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
+            <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
+          </div>
+        </div>
       </section>
     </main>
   )
