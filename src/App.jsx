@@ -815,13 +815,13 @@ function App() {
             </div>
           </div>
 
-          <div className="print-grid2-full">
+          <div className="print-grid2-full print-status-blood-grid">
             <div className="print-block">
               <h3>Состояние</h3>
               <div className="print-card">
+                <div className="print-row"><span>Голод</span>{renderTrack(character.hunger, 5, 'filled', 'square')}</div>
                 <div className="print-row"><span>Здоровье</span>{renderTrack(character.health, 10, 'disabled-after-limit', 'square')}</div>
                 <div className="print-row"><span>Воля</span>{renderTrack(character.willpower, 10, 'disabled-after-limit', 'square')}</div>
-                <div className="print-row"><span>Голод</span>{renderTrack(character.hunger, 5, 'filled', 'square')}</div>
                 <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10, 'disabled-after-limit', 'square')}</div>
               </div>
             </div>

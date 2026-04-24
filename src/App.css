@@ -481,7 +481,7 @@ button:hover {
   .print-sheet {
     display: flex;
     flex-direction: column;
-    gap: 1.8mm;
+    gap: 2.6mm;
     font-size: 8.8pt;
     line-height: 1.22;
     font-family: 'Inter', Arial, Helvetica, sans-serif;
@@ -491,7 +491,7 @@ button:hover {
   .print-top {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8mm 2.2mm;
+    gap: 1.2mm 2.6mm;
     border: 0.35mm solid #1a1a1a;
     padding: 1.4mm;
     border-radius: 1.2mm;
@@ -517,13 +517,13 @@ button:hover {
   .print-grid3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.7mm;
+    gap: 2.2mm;
   }
 
   .print-grid2-full {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.7mm;
+    gap: 2.2mm;
   }
 
   .print-disciplines-by-row {
@@ -534,6 +534,11 @@ button:hover {
   .print-block {
     break-inside: avoid-page;
     page-break-inside: avoid;
+    margin-top: 1.4mm;
+  }
+
+  .print-main-page > .print-block:first-of-type {
+    margin-top: 0;
   }
 
   .print-card.discipline-card.print-merit-flaw-card {
@@ -624,6 +629,7 @@ button:hover {
   .print-sheet h3 {
     font-size: 14px;
     margin-top: 0.4mm;
+    margin-bottom: 1.4mm;
     border-bottom: 0.3mm solid #1a1a1a;
     padding-bottom: 0.4mm;
     text-align: center;
@@ -653,7 +659,7 @@ button:hover {
 body.pdf-export .print-sheet {
   display: flex !important;
   flex-direction: column;
-  gap: 1.8mm;
+  gap: 2.6mm;
   font-size: 8.8pt;
   line-height: 1.22;
   width: 198mm;
@@ -672,7 +678,7 @@ body.pdf-export .vamp-header {
 body.pdf-export .print-top {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8mm 2.2mm;
+  gap: 1.2mm 2.6mm;
   border: 0.35mm solid #1a1a1a;
   padding: 1.4mm;
   border-radius: 1.2mm;
@@ -698,13 +704,13 @@ body.pdf-export .print-top-col > div {
 body.pdf-export .print-grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.7mm;
+  gap: 2.2mm;
 }
 
 body.pdf-export .print-grid2-full {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.7mm;
+  gap: 2.2mm;
 }
 
 body.pdf-export .print-disciplines-by-row {
@@ -715,6 +721,11 @@ body.pdf-export .print-disciplines-by-row {
 body.pdf-export .print-block {
   break-inside: avoid-page;
   page-break-inside: avoid;
+  margin-top: 1.4mm;
+}
+
+body.pdf-export .print-main-page > .print-block:first-of-type {
+  margin-top: 0;
 }
 
 body.pdf-export .print-card.discipline-card.print-merit-flaw-card {
@@ -803,6 +814,7 @@ body.pdf-export .print-title {
 body.pdf-export .print-sheet h3 {
   font-size: 14px;
   margin-top: 0.4mm;
+  margin-bottom: 1.4mm;
   border-bottom: 0.3mm solid #1a1a1a;
   padding-bottom: 0.4mm;
   text-align: center;
@@ -862,6 +874,28 @@ body.pdf-export .dot-svg {
   color: #3d3d3d;
   border-bottom: 0.18mm dotted #bdbdbd;
   padding: 0.25mm 0;
+}
+
+@media print {
+  .print-block > .print-grid3,
+  .print-block > .print-grid2-full,
+  .print-block > .print-card {
+    margin-top: 0.8mm;
+  }
+}
+
+body.pdf-export .print-block > .print-grid3,
+body.pdf-export .print-block > .print-grid2-full,
+body.pdf-export .print-block > .print-card {
+  margin-top: 0.8mm;
+}
+
+.print-status-blood-grid {
+  align-items: start;
+}
+
+.print-status-blood-grid > .print-block {
+  align-content: start;
 }
 
 @media print {
