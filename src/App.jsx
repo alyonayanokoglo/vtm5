@@ -58,6 +58,23 @@ const initialSkillNotes = Object.values(SKILLS).flat().reduce((acc, item) => {
   return acc
 }, {})
 
+const BLOOD_POTENCY_NOTES = {
+  1: '1 — Кровь уже вампирская, но еще сравнительно «молодая». Кровавый всплеск дает +2 куба, за одну Проверку Пробуждения лечится 1 поверхностный урон, а для дисциплины 1 уровня можно один раз перебросить неудачную Проверку Пробуждения. Сила проклятия: 2. По питанию это мягкий уровень без серьезных штрафов.',
+  2: '2 — Сила крови уплотняется: Кровавый всплеск остается +2 куба, но лечение возрастает до 2 поверхностного урона за Проверку Пробуждения. Силы дисциплин получают +1 куб, реролл неудачной Проверки Пробуждения доступен для дисциплин 1 уровня, Сила проклятия: 2. Животная и пакетированная кровь насыщает хуже (примерно вдвое).',
+  3: '3 — Кровь становится заметно сильнее: Кровавый всплеск +3 куба, лечение 2 поверхностного урона, бонус к силам дисциплин +1 куб. Переброс неудачной Проверки Пробуждения действует уже для дисциплин 2 уровня и ниже. Сила проклятия: 3. Животная и пакетированная кровь практически перестает насыщать.',
+  4: '4 — Уровень уверенной мощи: Кровавый всплеск +3 куба, лечение 3 поверхностного урона, бонус к силам дисциплин +2 куба, переброс Проверки Пробуждения для дисциплин 2 уровня и ниже. Сила проклятия: 3. Животная/пакетированная кровь не насыщает, а человеческая кровь начинает насыщать хуже.',
+  5: '5 — Порог «тяжелой» крови: Кровавый всплеск +4 куба, лечение 3 поверхностного урона, бонус к силам дисциплин +2 куба, переброс для дисциплин 3 уровня и ниже. Сила проклятия: 4. Кормление усложняется: животная и пакетированная кровь не насыщают, человеческая кровь слабее, а чтобы опустить Голод ниже 2, обычно нужно осушить и убить человека.',
+  6: '6 — Кровь почти старейшинская: Кровавый всплеск +4 куба, лечение 3 поверхностного урона, бонус к силам дисциплин +3 куба, переброс для дисциплин 3 уровня и ниже. Сила проклятия: 4. Ограничения кормления усиливаются: человеческая кровь дает еще меньше насыщения, а нижние уровни Голода удерживать трудно без смертельного кормления.',
+  7: '7 — Очень высокая potency: Кровавый всплеск +5 кубов, лечение 3 поверхностного урона, бонус к силам дисциплин +3 куба, переброс для дисциплин 4 уровня и ниже. Сила проклятия: 5. Персонаж чудовищно силен, но клановое проклятие и проблемы с насыщением становятся крайне тяжелыми для повседневной игры.',
+  8: '8 — Монструозная сила крови: Кровавый всплеск +5 кубов, лечение 4 поверхностного урона, бонус к силам дисциплин +4 куба, переброс для дисциплин 4 уровня и ниже. Сила проклятия: 5. Чтобы опускать Голод ниже 3, обычно требуется смертельное кормление; обычная добыча почти не поддерживает.',
+  9: '9 — Почти предельная плотность крови: Кровавый всплеск +6 кубов, лечение 4 поверхностного урона, бонус к силам дисциплин +4 куба, переброс для дисциплин 5 уровня и ниже. Сила проклятия: 6. Питание крайне затруднено, а слабости клана становятся доминирующим фактором поведения и выживания.',
+  10: '10 — Пик силы крови: Кровавый всплеск +6 кубов, лечение 5 поверхностного урона, бонус к силам дисциплин +5 кубов, переброс для дисциплин 5 уровня и ниже. Сила проклятия: 6. Это уровень почти нечеловеческой сущности: мощь огромна, но цена в виде проклятий и требований к кормлению максимальна.',
+}
+
+function getBloodPotencyNote(value) {
+  return BLOOD_POTENCY_NOTES[value] || ''
+}
+
 /** Печать: не показывать пустые слоты с дефолтным именем «Дисциплина N» без текста и без точек. */
 function isDisciplineFilledForPrint(item) {
   const name = item?.name?.trim() ?? ''
@@ -138,6 +155,7 @@ function App() {
     health: 4,
     willpower: 2,
     bloodPotency: 1,
+    bloodPotencyNote: getBloodPotencyNote(1),
     merits: '',
     flaws: '',
     notes: '',
@@ -162,6 +180,19 @@ function App() {
 
   const updateCharacter = (field, value) => {
     setCharacter((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const updateBloodPotency = (value) => {
+    setCharacter((prev) => {
+      const prevAuto = getBloodPotencyNote(prev.bloodPotency)
+      const nextAuto = getBloodPotencyNote(value)
+      const shouldReplaceAuto = !prev.bloodPotencyNote || prev.bloodPotencyNote === prevAuto
+      return {
+        ...prev,
+        bloodPotency: value,
+        bloodPotencyNote: shouldReplaceAuto ? nextAuto : prev.bloodPotencyNote,
+      }
+    })
   }
 
   const renderDotInput = (value, onChange, max = 5, min = 0) => (
@@ -487,7 +518,16 @@ function App() {
         </label>
         <label>
           Сила крови ({character.bloodPotency})
-          <input type="range" min="0" max="10" value={character.bloodPotency} onChange={(e) => updateCharacter('bloodPotency', Number(e.target.value))} />
+          <input type="range" min="1" max="10" value={character.bloodPotency} onChange={(e) => updateBloodPotency(Number(e.target.value))} />
+        </label>
+        <label>
+          Коммент к силе крови
+          <textarea
+            rows={2}
+            value={character.bloodPotencyNote}
+            placeholder="Описание, ограничения, особенности силы крови..."
+            onChange={(e) => updateCharacter('bloodPotencyNote', e.target.value)}
+          />
         </label>
       </section>
 
@@ -775,6 +815,30 @@ function App() {
             </div>
           </div>
 
+          <div className="print-grid2-full">
+            <div className="print-block">
+              <h3>Состояние</h3>
+              <div className="print-card">
+                <div className="print-row"><span>Здоровье</span>{renderTrack(character.health, 10, 'disabled-after-limit', 'square')}</div>
+                <div className="print-row"><span>Воля</span>{renderTrack(character.willpower, 10, 'disabled-after-limit', 'square')}</div>
+                <div className="print-row"><span>Голод</span>{renderTrack(character.hunger, 5, 'filled', 'square')}</div>
+                <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10, 'disabled-after-limit', 'square')}</div>
+              </div>
+            </div>
+            <div className="print-block">
+              <h3>Сила крови</h3>
+              <div className="print-card">
+                <div className="print-blood-meta">
+                  <div className="print-row"><span>Поколение</span><span>{character.generation || '____________________'}</span></div>
+                  <div className="print-row"><span>Сила крови</span><span>{character.bloodPotency}</span></div>
+                </div>
+                <div className="print-row-note print-blood-note">
+                  {character.bloodPotencyNote?.trim() ? character.bloodPotencyNote : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="print-block">
             <h3>Атрибуты</h3>
             <div className="print-grid3">
@@ -846,31 +910,7 @@ function App() {
             </div>
           </div>
 
-          <div className="print-grid2-full">
-            <div className="print-block">
-              <h3>Состояние</h3>
-              <div className="print-card">
-                <h4>Трекеры</h4>
-                <div className="print-row"><span>Здоровье</span>{renderTrack(character.health, 10, 'disabled-after-limit', 'square')}</div>
-                <div className="print-row"><span>Воля</span>{renderTrack(character.willpower, 10, 'disabled-after-limit', 'square')}</div>
-                <div className="print-row"><span>Голод</span>{renderTrack(character.hunger, 5, 'filled', 'square')}</div>
-                <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10, 'filled', 'square')}</div>
-              </div>
-            </div>
-            <div className="print-block">
-              <h3>Сила крови</h3>
-              <div className="print-card">
-                <h4>Показатель</h4>
-                <div className="print-row"><span>Поколение</span><span>{character.generation || '____________________'}</span></div>
-                <div className="print-row"><span>Сила крови</span><span>{character.bloodPotency}</span></div>
-                <div className="print-row"><span>Текущая</span>{renderTrack(character.bloodPotency, 10, 'disabled-after-limit')}</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="print-disciplines-page">
-          <div className="print-disciplines-stack">
+          <div className="print-block">
             <h3>Дисциплины</h3>
             <div className="print-grid2-full print-disciplines-by-row">
               {printDisciplines.map((d, i) => (
@@ -888,6 +928,7 @@ function App() {
               ))}
             </div>
           </div>
+
         </section>
 
         {printNotesPages.map((notesPage, pageIndex) => (
