@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import bloodSplatter from './img/—Pngtree—realistic blood splatter stain_22930222.png'
-import { getPredatorReference, PREDATOR_REFERENCE_NOTE } from './predatorBonuses.js'
 import './App.css'
 
 const CLANS = [
@@ -13,6 +12,7 @@ const CLANS = [
   'Носферату',
   'Тореадор',
   'Тремер',
+  'Равнос',
   'Каитифы',
   'Цимисхи',
   'Слабокровные',
@@ -33,13 +33,13 @@ const PREDATOR_TYPES = [
 
 const ATTRIBUTES = {
   Физические: ['Сила', 'Ловкость', 'Выносливость'],
-  Социальные: ['Харизма', 'Манипулирование', 'Самообладание'],
-  Ментальные: ['Интеллект', 'Смекалка', 'Решительность'],
+  Социальные: ['Обаяние', 'Манипулирование', 'Самообладание'],
+  Ментальные: ['Интеллект', 'Смекалка', 'Упорство'],
 }
 
 const SKILLS = {
-  Физические: ['Атлетика', 'Рукопашный бой', 'Ремесло', 'Вождение', 'Стрельба', 'Воровство', 'Холодное оружие', 'Скрытность', 'Выживание'],
-  Социальные: ['Обращение с животными', 'Этикет', 'Проницательность', 'Запугивание', 'Лидерство', 'Исполнение', 'Убеждение', 'Уличное чутье', 'Хитрость'],
+  Физические: ['Атлетика', 'Драка', 'Ремесло', 'Вождение', 'Стрельба', 'Воровство', 'Фехтование', 'Скрытность', 'Выживание'],
+  Социальные: ['Обращение с животными', 'Этикет', 'Проницательность', 'Запугивание', 'Лидерство', 'Исполнение', 'Принципы', 'Уличное чутье', 'Хитрость'],
   Ментальные: ['Гуманитарные науки', 'Наблюдательность', 'Финансы', 'Расследование', 'Медицина', 'Оккультизм', 'Политика', 'Естественные науки', 'Технологии'],
 }
 
@@ -50,6 +50,11 @@ const initialAttributes = Object.values(ATTRIBUTES).flat().reduce((acc, item) =>
 
 const initialSkills = Object.values(SKILLS).flat().reduce((acc, item) => {
   acc[item] = 0
+  return acc
+}, {})
+
+const initialSkillNotes = Object.values(SKILLS).flat().reduce((acc, item) => {
+  acc[item] = ''
   return acc
 }, {})
 
@@ -66,47 +71,49 @@ function isDisciplineFilledForPrint(item) {
   return true
 }
 
-/** Высота печатной области ≈ A4 с полями @page 6mm (как .print-main-page min-height). */
-function measurePrintablePageHeightPx() {
-  const el = document.createElement('div')
-  el.setAttribute('aria-hidden', 'true')
-  el.style.cssText =
-    'position:fixed;left:0;top:0;height:285mm;width:0;overflow:hidden;visibility:hidden;pointer-events:none;z-index:-9999;margin:0;padding:0;border:0'
-  document.body.appendChild(el)
-  const h = el.getBoundingClientRect().height
-  el.remove()
-  return h > 0 ? h : (285 * 96) / 25.4
-}
+function paginateNotesForPrint(rawText) {
+  const text = (rawText || '').replace(/\r\n/g, '\n').trim()
+  if (!text) return ['']
 
-/** Если 3–4 дисциплины не помещаются под 1–2 на первой странице — ставим класс с разрывом перед 3-й. */
-function syncDisciplineRow2PageBreak(sheet) {
-  const grid = sheet?.querySelector('.print-disciplines-by-row')
-  if (!sheet || !grid) return
-  grid.classList.remove('print-disciplines-force-row2-page')
-  if (grid.children.length < 3) return
+  const mmToPx = (mm) => (mm * 96) / 25.4
+  const notesWidthPx = mmToPx(198 - (1.8 * 2) - (0.8 * 2))
+  const lineHeightPx = 9 * (96 / 72) * 1.4
+  const usableHeightPx = mmToPx(285 - 16)
+  const maxLinesPerPage = Math.max(1, Math.floor(usableHeightPx / lineHeightPx))
 
-  const pagePx = measurePrintablePageHeightPx()
-  const sheetTop = sheet.getBoundingClientRect().top
-  const card2 = grid.children[1]
-  const c3 = grid.children[2]
-  const c4 = grid.children[3]
-  if (!card2 || !c3) return
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return [text]
+  ctx.font = '9pt Inter, Arial, Helvetica, sans-serif'
 
-  const row1Bottom = card2.getBoundingClientRect().bottom - sheetTop
-  const row2H = Math.max(c3.getBoundingClientRect().height, c4 ? c4.getBoundingClientRect().height : 0)
-  let rowGap = 12
-  try {
-    const raw = getComputedStyle(grid).rowGap || getComputedStyle(grid).gap || '0'
-    const parsed = parseFloat(raw)
-    if (!Number.isNaN(parsed)) rowGap = parsed
-  } catch {
-    /* ignore */
+  const paragraphs = text.split('\n')
+  const lines = []
+
+  for (const paragraph of paragraphs) {
+    const p = paragraph.trim()
+    if (!p) {
+      lines.push('')
+      continue
+    }
+    const words = p.split(/\s+/)
+    let currentLine = ''
+    for (const word of words) {
+      const candidate = currentLine ? `${currentLine} ${word}` : word
+      if (ctx.measureText(candidate).width <= notesWidthPx) {
+        currentLine = candidate
+      } else {
+        if (currentLine) lines.push(currentLine)
+        currentLine = word
+      }
+    }
+    if (currentLine) lines.push(currentLine)
   }
-  const buffer = 14
-  const remaining = pagePx - row1Bottom
-  if (remaining < row2H + rowGap + buffer) {
-    grid.classList.add('print-disciplines-force-row2-page')
+
+  const pages = []
+  for (let i = 0; i < lines.length; i += maxLinesPerPage) {
+    pages.push(lines.slice(i, i + maxLinesPerPage).join('\n').trim())
   }
+  return pages.length ? pages : ['']
 }
 
 function App() {
@@ -122,8 +129,14 @@ function App() {
     desire: '',
     clan: CLANS[0],
     predatorType: PREDATOR_TYPES[0],
+    predatorHuntComment: '',
     generation: '13',
+    convictions: '',
+    attachment: '',
     humanity: 7,
+    hunger: 1,
+    health: 4,
+    willpower: 2,
     bloodPotency: 1,
     merits: '',
     flaws: '',
@@ -131,6 +144,7 @@ function App() {
   })
   const [attributes, setAttributes] = useState(initialAttributes)
   const [skills, setSkills] = useState(initialSkills)
+  const [skillNotes, setSkillNotes] = useState(initialSkillNotes)
   const [disciplines, setDisciplines] = useState([
     { name: 'Дисциплина 1', dots: 1, description: '' },
     { name: 'Дисциплина 2', dots: 0, description: '' },
@@ -140,17 +154,10 @@ function App() {
 
   const derived = useMemo(
     () => ({
-      health: 3 + attributes['Выносливость'],
-      willpower: attributes['Самообладание'] + attributes['Решительность'],
       skillDotsTotal: Object.values(skills).reduce((sum, value) => sum + value, 0),
       attributeDotsTotal: Object.values(attributes).reduce((sum, value) => sum + value, 0),
     }),
     [attributes, skills],
-  )
-
-  const predatorReference = useMemo(
-    () => getPredatorReference(character.predatorType),
-    [character.predatorType],
   )
 
   const updateCharacter = (field, value) => {
@@ -175,7 +182,6 @@ function App() {
 
     document.body.classList.add('pdf-export')
     void printSheetRef.current?.offsetHeight
-    syncDisciplineRow2PageBreak(printSheetRef.current)
     let canvas
     try {
       const images = Array.from(printSheetRef.current.querySelectorAll('img'))
@@ -199,7 +205,6 @@ function App() {
         useCORS: true,
       })
     } finally {
-      printSheetRef.current?.querySelector('.print-disciplines-by-row')?.classList.remove('print-disciplines-force-row2-page')
       document.body.classList.remove('pdf-export')
     }
 
@@ -245,7 +250,7 @@ function App() {
     setTimeout(restoreTitle, 1000)
   }
 
-  const renderTrack = (filled, total = 5, mode = 'filled') => (
+  const renderTrack = (filled, total = 5, mode = 'filled', shape = 'circle') => (
     <span className="track">
       {Array.from({ length: total }).map((_, i) => (
         <svg
@@ -256,9 +261,13 @@ function App() {
           viewBox="0 0 100 100"
           aria-hidden="true"
         >
-          <circle className="dot-ring" cx="50" cy="50" r="44" />
+          {shape === 'square'
+            ? <rect className="dot-ring" x="8" y="8" width="84" height="84" />
+            : <circle className="dot-ring" cx="50" cy="50" r="44" />}
           {(mode === 'disabled-after-limit' ? i >= filled : i < filled)
-            ? <circle className="dot-core" cx="50" cy="50" r="34" />
+            ? (shape === 'square'
+              ? <rect className="dot-core" x="18" y="18" width="64" height="64" />
+              : <circle className="dot-core" cx="50" cy="50" r="34" />)
             : null}
         </svg>
       ))}
@@ -268,7 +277,6 @@ function App() {
   const printDisciplines = useMemo(() => {
     return disciplines
       .filter(isDisciplineFilledForPrint)
-      .slice(0, 4)
       .map((item) => ({
         name: item.name?.trim() || '',
         dots: item.dots ?? 0,
@@ -293,21 +301,10 @@ function App() {
     }))
   }, [flaws])
 
-  useEffect(() => {
-    const onBefore = () => {
-      syncDisciplineRow2PageBreak(printSheetRef.current)
-      requestAnimationFrame(() => syncDisciplineRow2PageBreak(printSheetRef.current))
-    }
-    const onAfter = () => {
-      printSheetRef.current?.querySelector('.print-disciplines-by-row')?.classList.remove('print-disciplines-force-row2-page')
-    }
-    window.addEventListener('beforeprint', onBefore)
-    window.addEventListener('afterprint', onAfter)
-    return () => {
-      window.removeEventListener('beforeprint', onBefore)
-      window.removeEventListener('afterprint', onAfter)
-    }
-  }, [])
+  const printNotesPages = useMemo(
+    () => paginateNotesForPrint(character.notes),
+    [character.notes],
+  )
 
   const saveCharacterJson = () => {
     const data = {
@@ -315,6 +312,7 @@ function App() {
       character,
       attributes,
       skills,
+      skillNotes,
       disciplines,
       merits,
       flaws,
@@ -351,6 +349,7 @@ function App() {
       setCharacter((prev) => ({ ...prev, ...parsed.character }))
       setAttributes((prev) => ({ ...prev, ...parsed.attributes }))
       setSkills((prev) => ({ ...prev, ...parsed.skills }))
+      setSkillNotes((prev) => ({ ...prev, ...initialSkillNotes, ...(parsed.skillNotes || {}) }))
       setDisciplines(
         Array.isArray(parsed.disciplines)
           ? parsed.disciplines.map((item, i) => ({
@@ -433,11 +432,11 @@ function App() {
           <input value={character.chronicle} onChange={(e) => updateCharacter('chronicle', e.target.value)} />
         </label>
         <label>
-          Амбиция
+          Цель
           <input value={character.ambition} onChange={(e) => updateCharacter('ambition', e.target.value)} />
         </label>
         <label>
-          Желание
+          Прихоть
           <input value={character.desire} onChange={(e) => updateCharacter('desire', e.target.value)} />
         </label>
         <label>
@@ -457,46 +456,53 @@ function App() {
               ))}
             </select>
           </label>
-          {predatorReference ? (
-            <aside className="predator-reference" aria-label="Справка по стилю охоты V5">
-              <div className="predator-reference-title">Что даёт стиль (создание персонажа, V5)</div>
-              <p className="predator-reference-feed">{predatorReference.feeding}</p>
-              <ul className="predator-reference-list">
-                {predatorReference.bullets.map((line, i) => (
-                  <li key={i}>{line}</li>
-                ))}
-              </ul>
-              {predatorReference.notes?.length ? (
-                <ul className="predator-reference-notes">
-                  {predatorReference.notes.map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-                </ul>
-              ) : null}
-              <p className="predator-reference-foot">{PREDATOR_REFERENCE_NOTE}</p>
-            </aside>
-          ) : null}
+          <label>
+            Коммент к стилю охоты
+            <input
+              value={character.predatorHuntComment}
+              placeholder="Что бросать, чтобы успешно насытиться..."
+              onChange={(e) => updateCharacter('predatorHuntComment', e.target.value)}
+            />
+          </label>
         </div>
         <label>
           Поколение
           <input value={character.generation} onChange={(e) => updateCharacter('generation', e.target.value)} />
         </label>
         <label>
+          Убеждения
+          <input value={character.convictions} onChange={(e) => updateCharacter('convictions', e.target.value)} />
+        </label>
+        <label>
+          Привязанность
+          <input value={character.attachment} onChange={(e) => updateCharacter('attachment', e.target.value)} />
+        </label>
+        <label>
           Человечность ({character.humanity})
           <input type="range" min="0" max="10" value={character.humanity} onChange={(e) => updateCharacter('humanity', Number(e.target.value))} />
+        </label>
+        <label>
+          Голод ({character.hunger})
+          <input type="range" min="0" max="5" value={character.hunger} onChange={(e) => updateCharacter('hunger', Number(e.target.value))} />
+        </label>
+        <label>
+          Сила крови ({character.bloodPotency})
+          <input type="range" min="0" max="10" value={character.bloodPotency} onChange={(e) => updateCharacter('bloodPotency', Number(e.target.value))} />
         </label>
       </section>
 
       <section className="panel stats">
         <h2>Производные значения</h2>
-        <div>Здоровье: {derived.health}</div>
-        <div>Сила воли: {derived.willpower}</div>
+        <label>
+          ХП ({character.health})
+          <input type="range" min="0" max="10" value={character.health} onChange={(e) => updateCharacter('health', Number(e.target.value))} />
+        </label>
+        <label>
+          Воля ({character.willpower})
+          <input type="range" min="0" max="10" value={character.willpower} onChange={(e) => updateCharacter('willpower', Number(e.target.value))} />
+        </label>
         <div>Всего точек атрибутов: {derived.attributeDotsTotal}</div>
         <div>Всего точек навыков: {derived.skillDotsTotal}</div>
-        <label>
-          Сила крови
-          {renderDotInput(character.bloodPotency, (value) => updateCharacter('bloodPotency', value), 10, 0)}
-        </label>
       </section>
 
       <section className="grid3">
@@ -523,15 +529,22 @@ function App() {
           <div key={group} className="panel">
             <h2>{group} навыки</h2>
             {list.map((skill) => (
-              <label key={skill} className="row">
-                <span>{skill}</span>
-                {renderDotInput(
-                  skills[skill],
-                  (value) => setSkills((prev) => ({ ...prev, [skill]: value })),
-                  5,
-                  0,
-                )}
-              </label>
+              <div key={skill} className="skill-item">
+                <label className="row">
+                  <span>{skill}</span>
+                  {renderDotInput(
+                    skills[skill],
+                    (value) => setSkills((prev) => ({ ...prev, [skill]: value })),
+                    5,
+                    0,
+                  )}
+                </label>
+                <input
+                  value={skillNotes[skill] || ''}
+                  placeholder="Специализация (опционально)"
+                  onChange={(e) => setSkillNotes((prev) => ({ ...prev, [skill]: e.target.value }))}
+                />
+              </div>
             ))}
           </div>
         ))}
@@ -748,15 +761,16 @@ function App() {
                 <div><strong>Хроника:</strong> {character.chronicle || '____________________'}</div>
               </div>
               <div className="print-top-col">
-                <div><strong>Амбиция:</strong> {character.ambition || '____________________'}</div>
-                <div><strong>Желание:</strong> {character.desire || '____________________'}</div>
+                <div><strong>Цель:</strong> {character.ambition || '____________________'}</div>
+                <div><strong>Прихоть:</strong> {character.desire || '____________________'}</div>
                 <div><strong>Стиль охоты:</strong> {character.predatorType}</div>
+                <div><strong>Коммент стиля:</strong> {character.predatorHuntComment || '____________________'}</div>
               </div>
               <div className="print-top-col">
                 <div><strong>Клан:</strong> {character.clan}</div>
-                <div><strong>Поколение:</strong> {character.generation}</div>
                 <div><strong>Сир:</strong> {character.sire || '____________________'}</div>
-                <div><strong>Сила крови:</strong> {character.bloodPotency}</div>
+                <div><strong>Убеждения:</strong> {character.convictions || '____________________'}</div>
+                <div><strong>Привязанность:</strong> {character.attachment || '____________________'}</div>
               </div>
             </div>
           </div>
@@ -786,29 +800,13 @@ function App() {
                   <h4>{group}</h4>
                   {list.map((item) => (
                     <div key={item} className="print-row">
-                      <span>{item}</span>
+                      <span>
+                        {item}
+                        {skillNotes[item]?.trim() ? ` (${skillNotes[item].trim()})` : ''}
+                      </span>
                       {renderTrack(skills[item], 5)}
                     </div>
                   ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="print-block">
-            <h3>Дисциплины</h3>
-            <div className="print-grid2-full print-disciplines-by-row">
-              {printDisciplines.map((d, i) => (
-                <div className="print-card discipline-card" key={`discipline-cell-${i}`}>
-                  <div className="print-row discipline-row">
-                    <div className="print-row-main">
-                      <span>{d.name}</span>
-                      {renderTrack(d.dots, 5)}
-                    </div>
-                    <div className="print-row-note">
-                      {d.description || ''}
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>
@@ -848,28 +846,62 @@ function App() {
             </div>
           </div>
 
-          <div className="print-block">
-            <h3>Состояние</h3>
-            <div className="print-card">
-              <h4>Трекеры</h4>
-              <div className="print-row"><span>Здоровье</span>{renderTrack(derived.health, 10, 'disabled-after-limit')}</div>
-              <div className="print-row"><span>Воля</span>{renderTrack(derived.willpower, 10, 'disabled-after-limit')}</div>
-              <div className="print-row"><span>Голод</span>{renderTrack(0, 5)}</div>
-              <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10)}</div>
+          <div className="print-grid2-full">
+            <div className="print-block">
+              <h3>Состояние</h3>
+              <div className="print-card">
+                <h4>Трекеры</h4>
+                <div className="print-row"><span>Здоровье</span>{renderTrack(character.health, 10, 'disabled-after-limit', 'square')}</div>
+                <div className="print-row"><span>Воля</span>{renderTrack(character.willpower, 10, 'disabled-after-limit', 'square')}</div>
+                <div className="print-row"><span>Голод</span>{renderTrack(character.hunger, 5, 'filled', 'square')}</div>
+                <div className="print-row"><span>Человечность</span>{renderTrack(character.humanity, 10, 'filled', 'square')}</div>
+              </div>
             </div>
-          </div>
-        </section>
-
-        <section className="print-notes-page">
-          <div className="print-notes-stack">
-            <h3>Заметки персонажа</h3>
-            <div className="print-card print-notes-card">
-              <div className="print-notes">
-                {character.notes?.trim() ? character.notes : ''}
+            <div className="print-block">
+              <h3>Сила крови</h3>
+              <div className="print-card">
+                <h4>Показатель</h4>
+                <div className="print-row"><span>Поколение</span><span>{character.generation || '____________________'}</span></div>
+                <div className="print-row"><span>Сила крови</span><span>{character.bloodPotency}</span></div>
+                <div className="print-row"><span>Текущая</span>{renderTrack(character.bloodPotency, 10, 'disabled-after-limit')}</div>
               </div>
             </div>
           </div>
         </section>
+
+        <section className="print-disciplines-page">
+          <div className="print-disciplines-stack">
+            <h3>Дисциплины</h3>
+            <div className="print-grid2-full print-disciplines-by-row">
+              {printDisciplines.map((d, i) => (
+                <div className="print-card discipline-card" key={`discipline-cell-${i}`}>
+                  <div className="print-row discipline-row">
+                    <div className="print-row-main">
+                      <span>{d.name}</span>
+                      {renderTrack(d.dots, 5)}
+                    </div>
+                    <div className="print-row-note">
+                      {d.description || ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {printNotesPages.map((notesPage, pageIndex) => (
+          <section className="print-notes-page" key={`notes-page-${pageIndex}`}>
+            <div className="print-notes-stack">
+              <h3>{pageIndex === 0 ? 'Заметки персонажа' : `Заметки персонажа — стр. ${pageIndex + 1}`}</h3>
+              <div className="print-card print-notes-card">
+                <div className="print-notes">
+                  {notesPage}
+                </div>
+              </div>
+            </div>
+          </section>
+        ))}
       </section>
     </main>
   )

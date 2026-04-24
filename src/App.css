@@ -103,9 +103,8 @@
 }
 
 .grid2 .predator-type-block {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 0.65rem;
+  grid-column: auto;
+  display: block;
 }
 
 .predator-reference {
@@ -184,6 +183,11 @@ button {
   font-size: 0.95rem;
 }
 
+select option {
+  color: #111;
+  background: #fff;
+}
+
 input,
 select,
 textarea {
@@ -209,6 +213,11 @@ button:hover {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 0.5rem;
+}
+
+.skill-item {
+  display: grid;
+  gap: 0.35rem;
 }
 
 .stats {
@@ -519,11 +528,7 @@ button:hover {
 
   .print-disciplines-by-row {
     align-items: start;
-  }
-
-  .print-disciplines-force-row2-page > .print-card.discipline-card:nth-child(3) {
-    break-before: page;
-    page-break-before: always;
+    align-content: start;
   }
 
   .print-block {
@@ -704,11 +709,7 @@ body.pdf-export .print-grid2-full {
 
 body.pdf-export .print-disciplines-by-row {
   align-items: start;
-}
-
-body.pdf-export .print-disciplines-force-row2-page > .print-card.discipline-card:nth-child(3) {
-  break-before: page;
-  page-break-before: always;
+  align-content: start;
 }
 
 body.pdf-export .print-block {
@@ -836,81 +837,77 @@ body.pdf-export .dot-svg {
 }
 
 @media print {
+  .print-disciplines-page,
+  .print-notes-page {
+    break-before: page;
+    page-break-before: always;
+    background: #fff;
+  }
+
+  .print-disciplines-stack,
   .print-notes-stack {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
+    display: block;
     gap: 1.8mm;
-    break-inside: avoid-page;
-    page-break-inside: avoid;
   }
 
   .print-notes-card {
     margin-top: 0;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    break-inside: auto;
+    page-break-inside: auto;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
 
   .print-notes {
-    flex: 1 1 auto;
-    /* Заголовок + отступы карточки; остальное — под линованное поле на всю высоту A4 */
-    min-height: calc(285mm - 26mm);
+    min-height: 0;
     height: auto;
+    overflow: visible;
     padding: 1mm 0.8mm;
-    line-height: 5.2mm;
-    background: repeating-linear-gradient(
+    font-size: 9pt;
+    line-height: 1.4;
+    white-space: pre-line;
+    background-image: linear-gradient(
       to bottom,
-      transparent 0,
-      transparent 5mm,
-      #c9c9c9 5mm,
-      #c9c9c9 5.2mm
+      transparent calc(100% - 0.2mm),
+      #cfcfcf calc(100% - 0.2mm),
+      #cfcfcf 100%
     );
+    background-size: 100% 1.4em;
+    background-repeat: repeat-y;
+    background-origin: content-box;
   }
 
-  .print-notes-page {
-    break-before: page;
-    page-break-before: always;
-    min-height: 285mm;
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-  }
 }
 
 body.pdf-export .print-notes-stack {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 1.8mm;
-  break-inside: avoid-page;
-  page-break-inside: avoid;
+  display: block;
 }
 
 body.pdf-export .print-notes-card {
   margin-top: 0;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  break-inside: auto;
+  page-break-inside: auto;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 body.pdf-export .print-notes {
-  flex: 1 1 auto;
-  min-height: calc(285mm - 26mm);
+  min-height: 0;
   height: auto;
+  overflow: visible;
   padding: 1mm 0.8mm;
-  line-height: 5.2mm;
-  background: repeating-linear-gradient(
+  font-size: 9pt;
+  line-height: 1.4;
+  white-space: pre-line;
+  background-image: linear-gradient(
     to bottom,
-    transparent 0,
-    transparent 5mm,
-    #c9c9c9 5mm,
-    #c9c9c9 5.2mm
+    transparent calc(100% - 0.2mm),
+    #cfcfcf calc(100% - 0.2mm),
+    #cfcfcf 100%
   );
+  background-size: 100% 1.4em;
+  background-repeat: repeat-y;
+  background-origin: content-box;
 }
 
 body.pdf-export .sheet::before {
@@ -919,11 +916,9 @@ body.pdf-export .sheet::before {
   background: none !important;
 }
 
+body.pdf-export .print-disciplines-page,
 body.pdf-export .print-notes-page {
   break-before: page;
   page-break-before: always;
-  min-height: 285mm;
-  display: flex;
-  flex-direction: column;
   background: #fff;
 }
